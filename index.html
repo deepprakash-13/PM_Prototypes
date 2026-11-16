@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Day Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600;700;800&display=swap">
+<style>
+/* Layout: sunny header, then a chunky sticker-style month grid beside the day's to-do list (stacked on phones). */
+:root {
+  --bg: #eaf5ff; --bg-dot: #d5e9fc; --surface: #ffffff; --surface-2: #f3f0ff; --fg: #2a2350; --muted: #6c6795; --line: #d9d3f5; --shadow: #cfc7f2;
+  --accent: #7046f0; --accent-fg: #ffffff; --accent-soft: #ece5ff; --sun: #ffd23f; --sun-fg: #3b2a00;
+  --good: #1fa971; --good-soft: #d4f7e6; --warn: #e88a00; --warn-soft: #fff1c9; --bad: #f2545b; --bad-soft: #ffe0e2;
+  --low: #3fa9e8;
+  --c-work: #7046f0; --c-personal: #ff5fa2; --c-health: #22b573; --c-errands: #ff8a1f; --c-learning: #18a8c9;
+  --font-display: "Fredoka", "Baloo 2", "Comic Sans MS", system-ui, sans-serif;
+  --font-body: "Nunito", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --radius: 16px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #17183a; --bg-dot: #222452; --surface: #22244d; --surface-2: #2c2e5e; --fg: #f1eeff; --muted: #aaa6d6; --line: #3a3c74; --shadow: #0f1030;
+  --accent: #a98bff; --accent-fg: #17183a; --accent-soft: #35306b; --sun: #ffd23f; --sun-fg: #3b2a00;
+  --good: #4ee0a0; --good-soft: #1b4040; --warn: #ffbf47; --warn-soft: #463b1c; --bad: #ff7d83; --bad-soft: #4a2440;
+  --low: #6cc6ff;
+  --c-work: #a98bff; --c-personal: #ff8cc0; --c-health: #4ee0a0; --c-errands: #ffab5c; --c-learning: #5fd6ee;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #17183a; --bg-dot: #222452; --surface: #22244d; --surface-2: #2c2e5e; --fg: #f1eeff; --muted: #aaa6d6; --line: #3a3c74; --shadow: #0f1030;
+  --accent: #a98bff; --accent-fg: #17183a; --accent-soft: #35306b; --sun: #ffd23f; --sun-fg: #3b2a00;
+  --good: #4ee0a0; --good-soft: #1b4040; --warn: #ffbf47; --warn-soft: #463b1c; --bad: #ff7d83; --bad-soft: #4a2440;
+  --low: #6cc6ff;
+  --c-work: #a98bff; --c-personal: #ff8cc0; --c-health: #4ee0a0; --c-errands: #ffab5c; --c-learning: #5fd6ee;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background-color: var(--bg); background-image: radial-gradient(var(--bg-dot) 2px, transparent 2.5px); background-size: 26px 26px; color: var(--fg); font-family: var(--font-body); font-size: 15.5px; line-height: 1.45; font-weight: 600; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 18px 32px; display: flex; flex-direction: column; gap: 18px; }
+
+/* Header */
+header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; flex-wrap: wrap; }
+.brand .logo { width: 44px; height: 44px; flex: none; }
+.brand h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.85rem; margin: 0; color: var(--accent); }
+.brand .now { color: var(--muted); font-size: 0.95rem; background: var(--surface); border: 2px solid var(--line); border-radius: 999px; padding: 2px 12px; }
+.tools { display: flex; gap: 8px; align-items: center; flex: 1 1 260px; justify-content: flex-end; }
+.search { position: relative; flex: 1 1 200px; max-width: 320px; }
+.search input { width: 100%; padding: 10px 14px 10px 38px; border-radius: 999px; border: 2px solid var(--line); background: var(--surface); }
+.search svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--accent); }
+.icon-btn { width: 44px; height: 44px; flex: none; border-radius: 999px; border: 2px solid var(--line); background: var(--surface); display: grid; place-items: center; color: var(--accent); box-shadow: 0 3px 0 var(--shadow); }
+.icon-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--shadow); }
+
+/* Overdue banner */
+.banner { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px 16px; border-radius: var(--radius); background: var(--bad-soft); color: var(--fg); border: 2px solid var(--bad); }
+.banner strong { color: var(--bad); }
+.banner .spacer { flex: 1; }
+
+/* Main grid */
+main { display: grid; grid-template-columns: minmax(0, 1fr) 410px; gap: 18px; align-items: start; }
+@media (max-width: 900px) { main { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--surface); border: 2px solid var(--line); border-radius: 24px; box-shadow: 0 6px 0 var(--shadow); }
+
+/* Calendar */
+.cal { padding: 18px; }
+.cal-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.cal-head h2 { font-family: var(--font-display); font-weight: 700; font-size: 1.6rem; margin: 0; flex: 1 1 auto; min-width: 0; }
+.cal-head h2 span { color: var(--muted); font-weight: 500; }
+.btn { border: 2px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 14px; font-weight: 700; font-size: 0.92rem; box-shadow: 0 3px 0 var(--shadow); transition: transform .08s ease; }
+.btn:hover { background: var(--surface-2); }
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--shadow); }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 55%, #000); }
+.btn.primary:hover { filter: brightness(1.08); background: var(--accent); }
+.btn.danger { background: var(--bad); color: #fff; border-color: var(--bad); }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--muted); box-shadow: none; }
+.btn.ghost:hover { background: var(--surface-2); color: var(--accent); }
+.btn.small { padding: 4px 11px; font-size: 0.84rem; }
+.dow, .grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 7px; }
+.dow div { text-align: center; font-family: var(--font-display); font-size: 0.85rem; font-weight: 600; color: var(--muted); padding-bottom: 4px; }
+.dow div:nth-child(6), .dow div:nth-child(7) { color: var(--c-personal); }
+.day { position: relative; aspect-ratio: 1 / 0.92; min-height: 50px; border-radius: 16px; border: 2px solid var(--line); background: var(--surface); padding: 6px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; overflow: hidden; transition: transform .12s ease; }
+.day:hover { border-color: var(--accent); transform: translateY(-2px) rotate(-1deg); }
+.day .num { font-family: var(--font-display); font-variant-numeric: tabular-nums; font-weight: 600; font-size: 1rem; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 999px; }
+.day.other { opacity: 0.4; }
+.day.today { border-color: var(--sun); border-width: 3px; }
+.day.today .num { background: var(--sun); color: var(--sun-fg); font-weight: 700; }
+.day.selected { outline: 3px solid var(--accent); outline-offset: 2px; }
+.day.s-done { background: var(--good-soft); border-color: var(--good); }
+.day.s-partial { background: var(--warn-soft); }
+.day.s-overdue { background: var(--bad-soft); }
+.day .star { position: absolute; right: 5px; top: 4px; font-size: 0.95rem; line-height: 1; }
+.dots { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 999px; background: var(--low); }
+.dot.p1 { background: var(--bad); } .dot.p2 { background: var(--warn); } .dot.p3 { background: var(--low); }
+.dot.done { opacity: 0.35; }
+.more { font-size: 0.7rem; color: var(--muted); font-weight: 700; }
+.day .bar { position: absolute; left: 6px; right: 6px; bottom: 5px; height: 5px; border-radius: 5px; background: color-mix(in srgb, var(--fg) 10%, transparent); overflow: hidden; }
+.day .bar i { display: block; height: 100%; background: var(--good); border-radius: 5px; }
+.day.s-overdue .bar i { background: var(--bad); }
+.day.s-partial .bar i { background: var(--warn); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 16px; font-size: 0.82rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { display: inline-block; width: 14px; height: 14px; border-radius: 5px; border: 2px solid var(--line); }
+@media (max-width: 520px) {
+  .cal { padding: 12px 10px; }
+  .cal-head h2 { font-size: 1.35rem; }
+  .dow, .grid { gap: 4px; }
+  .day { padding: 4px; border-radius: 12px; aspect-ratio: auto; min-height: 56px; }
+  .day .num { width: 24px; height: 24px; font-size: 0.85rem; }
+  .day .star { font-size: 0.75rem; right: 3px; top: 3px; }
+  .dot { width: 6px; height: 6px; }
+}
+
+/* Day panel */
+.panel { padding: 20px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.panel h3 { font-family: var(--font-display); font-weight: 700; font-size: 1.45rem; margin: 0; text-wrap: balance; }
+.eyebrow { font-family: var(--font-display); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.04em; color: var(--accent); }
+.summary { display: flex; flex-direction: column; gap: 6px; }
+.summary .line { display: flex; justify-content: space-between; font-size: 0.92rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.summary .line b { color: var(--fg); }
+.meter { height: 14px; border-radius: 14px; background: var(--surface-2); overflow: hidden; border: 2px solid var(--line); }
+.meter i { display: block; height: 100%; border-radius: 14px; background: repeating-linear-gradient(-45deg, var(--good), var(--good) 8px, color-mix(in srgb, var(--good) 75%, #fff) 8px, color-mix(in srgb, var(--good) 75%, #fff) 16px); transition: width .35s ease; }
+
+form.task-form { display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 20px; background: var(--surface-2); border: 2px dashed var(--line); }
+.task-form .row { display: flex; gap: 8px; flex-wrap: wrap; }
+.task-form input[type=text], .task-form select, .task-form input[type=time], .task-form textarea { border: 2px solid var(--line); background: var(--surface); border-radius: 12px; padding: 8px 11px; min-width: 0; }
+.task-form input[type=text] { flex: 1 1 180px; }
+.task-form select { flex: 1 1 130px; }
+.task-form input[type=time] { flex: 1 1 110px; }
+.task-form textarea { width: 100%; resize: vertical; min-height: 56px; }
+.task-form label.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.task-form .actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+
+.list { display: flex; flex-direction: column; gap: 12px; }
+.task { border: 2px solid var(--line); border-radius: 18px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; background: var(--surface); box-shadow: 0 4px 0 var(--shadow); border-top: 6px solid var(--low); }
+.task.p1 { border-top-color: var(--bad); } .task.p2 { border-top-color: var(--warn); }
+.task.is-done { background: var(--good-soft); border-color: var(--good); border-top-color: var(--good); }
+.task .top { display: flex; gap: 10px; align-items: flex-start; }
+.check { flex: none; width: 30px; height: 30px; border-radius: 10px; border: 3px solid var(--accent); background: var(--surface); display: grid; place-items: center; padding: 0; color: #fff; }
+.check:hover { background: var(--accent-soft); }
+.check.on { background: var(--good); border-color: var(--good); animation: pop .35s ease; }
+@keyframes pop { 0% { transform: scale(.6); } 60% { transform: scale(1.2); } 100% { transform: scale(1); } }
+.task .title { font-weight: 800; font-size: 1.02rem; word-break: break-word; }
+.task.is-done .title { text-decoration: line-through; text-decoration-thickness: 2px; color: var(--muted); }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 4px; font-size: 0.8rem; color: var(--muted); }
+.pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; background: var(--surface-2); font-weight: 700; }
+.pill .cdot { width: 9px; height: 9px; border-radius: 999px; }
+.pill.p1 { background: var(--bad-soft); color: var(--bad); } .pill.p2 { background: var(--warn-soft); color: var(--warn); } .pill.p3 { background: color-mix(in srgb, var(--low) 18%, transparent); color: var(--low); }
+.notes { font-size: 0.88rem; color: var(--muted); white-space: pre-wrap; word-break: break-word; margin: 0; font-weight: 500; }
+.prog { display: flex; align-items: center; gap: 10px; }
+.prog input[type=range] { flex: 1; accent-color: var(--accent); min-width: 0; height: 22px; }
+.prog output { font-family: var(--font-display); font-variant-numeric: tabular-nums; font-weight: 700; font-size: 0.95rem; width: 3.4em; text-align: right; color: var(--accent); }
+.task .acts { display: flex; gap: 4px; flex-wrap: wrap; }
+.subrow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 10px; border-radius: 14px; background: var(--surface-2); font-size: 0.88rem; }
+.subrow input[type=date] { border: 2px solid var(--line); background: var(--surface); border-radius: 10px; padding: 4px 8px; }
+.empty { text-align: center; color: var(--muted); padding: 22px 12px; border: 2px dashed var(--line); border-radius: 18px; font-size: 0.95rem; }
+.empty .big { display: block; font-size: 2rem; margin-bottom: 4px; }
+.result { display: flex; flex-direction: column; gap: 2px; text-align: left; border: 2px solid var(--line); background: var(--surface); border-radius: 14px; padding: 10px 12px; width: 100%; }
+.result:hover { border-color: var(--accent); }
+.result .d { font-size: 0.8rem; color: var(--muted); }
+
+footer { font-size: 0.82rem; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+footer .led { width: 10px; height: 10px; border-radius: 999px; background: var(--muted); flex: none; }
+footer .led.ok { background: var(--good); } footer .led.warn { background: var(--warn); }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--accent); color: var(--accent-fg); padding: 11px 18px; border-radius: 999px; font-weight: 700; font-size: 0.95rem; max-width: calc(100% - 32px); z-index: 20; box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 55%, #000); }
+#confetti { position: fixed; inset: 0; pointer-events: none; z-index: 30; width: 100%; height: 100%; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } .day:hover { transform: none; } }
+</style>
+<style>body{margin:0}</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><g stroke="var(--sun)" stroke-width="4" stroke-linecap="round"><path d="M24 3v6M24 39v6M3 24h6M39 24h6M9.2 9.2l4.2 4.2M34.6 34.6l4.2 4.2M9.2 38.8l4.2-4.2M34.6 13.4l4.2-4.2"/></g><circle cx="24" cy="24" r="11" fill="var(--sun)"/><circle cx="20" cy="22" r="1.8" fill="var(--sun-fg)"/><circle cx="28" cy="22" r="1.8" fill="var(--sun-fg)"/><path d="M19.5 27c2.5 3 6.5 3 9 0" stroke="var(--sun-fg)" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      <h1>Day Planner</h1>
+      <span class="now" id="nowLabel"></span>
+    </div>
+    <div class="tools">
+      <div class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="search" type="search" placeholder="Search tasks" aria-label="Search tasks" autocomplete="off">
+      </div>
+      <button class="icon-btn" id="themeBtn" type="button" aria-label="Switch light or dark mode" title="Light / dark mode"></button>
+    </div>
+  </header>
+
+  <div class="banner" id="overdue" hidden></div>
+
+  <main>
+    <section class="card cal" aria-label="Calendar">
+      <div class="cal-head">
+        <h2 id="monthTitle"></h2>
+        <button class="btn" id="prevBtn" type="button" aria-label="Previous month">&#8249;</button>
+        <button class="btn" id="todayBtn" type="button">Today</button>
+        <button class="btn" id="nextBtn" type="button" aria-label="Next month">&#8250;</button>
+      </div>
+      <div class="dow" id="dow"></div>
+      <div class="grid" id="grid"></div>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--good-soft)"></i>All done</span>
+        <span><i class="sw" style="background:var(--warn-soft)"></i>In progress</span>
+        <span><i class="sw" style="background:var(--bad-soft)"></i>Overdue</span>
+        <span><i class="dot p1"></i>High</span>
+        <span><i class="dot p2"></i>Medium</span>
+        <span><i class="dot p3"></i>Low</span>
+      </div>
+    </section>
+
+    <section class="card panel" id="panel" aria-live="polite">
+      <div id="dayView">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div>
+            <div class="eyebrow" id="dayEyebrow"></div>
+            <h3 id="dayTitle"></h3>
+          </div>
+          <div class="summary" id="summary"></div>
+          <form class="task-form" id="addForm" autocomplete="off"></form>
+          <div class="list" id="taskList"></div>
+        </div>
+      </div>
+      <div id="searchView" hidden>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div>
+            <div class="eyebrow">Search</div>
+            <h3 id="searchTitle"></h3>
+          </div>
+          <div class="list" id="results"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer><span class="led" id="led"></span><span id="status">Loading your tasks…</span></footer>
+</div>
+<div class="toast" id="toast" hidden></div>
+<canvas id="confetti" hidden></canvas>
+
+<script>
+(function () {
+  "use strict";
+  var CATS = [
+    { id: "work", name: "Work", icon: "\u{1F4BC}" }, { id: "personal", name: "Personal", icon: "\u{1F3E0}" }, { id: "health", name: "Health", icon: "\u{1F34E}" },
+    { id: "errands", name: "Errands", icon: "\u{1F6D2}" }, { id: "learning", name: "Learning", icon: "\u{1F4DA}" }
+  ];
+  var PRI = { 1: "High", 2: "Medium", 3: "Low" };
+  var MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  var DOW = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  var LOCAL_KEY = "dayplanner.tasks.v1";
+
+  // ---------- date helpers (all dates are local "YYYY-MM-DD") ----------
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function keyOf(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function parseKey(k) { var p = k.split("-"); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function todayKey() { return keyOf(new Date()); }
+  function addDays(k, n) { var d = parseKey(k); d.setDate(d.getDate() + n); return keyOf(d); }
+  function longDate(k) { return parseKey(k).toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" }); }
+  function shortDate(k) { return parseKey(k).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" }); }
+
+  // ---------- tiny DOM helper ----------
+  function h(tag, attrs) {
+    var el = document.createElement(tag);
+    if (attrs) for (var a in attrs) {
+      var v = attrs[a];
+      if (v == null || v === false) continue;
+      if (a === "text") el.textContent = v;
+      else if (a === "class") el.className = v;
+      else if (a.slice(0, 2) === "on") el.addEventListener(a.slice(2), v);
+      else if (a === "style") el.setAttribute("style", v);
+      else if (a in el && a !== "list") el[a] = v;
+      else el.setAttribute(a, v === true ? "" : v);
+    }
+    for (var i = 2; i < arguments.length; i++) {
+      var c = arguments[i];
+      if (c == null || c === false) continue;
+      if (Array.isArray(c)) c.forEach(function (x) { if (x != null && x !== false) el.append(x); });
+      else el.append(c);
+    }
+    return el;
+  }
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---------- state ----------
+  var tasks = new Map();
+  var now = new Date();
+  var view = { y: now.getFullYear(), m: now.getMonth() };
+  var selected = todayKey();
+  var query = "";
+  var editingId = null, movingId = null, deletingId = null;
+
+  // ---------- storage ----------
+  var store = { mode: "loading", col: null, chains: {} };
+  function chain(id, fn) {
+    var p = (store.chains[id] || Promise.resolve()).then(fn, fn);
+    store.chains[id] = p.catch(function () {});
+    return p.catch(function (e) {
+      if (e && e.code === "invalid_argument" && store.mode === "db") { useLocal("Saved in this browser only. Your tasks stay on this device."); toast("Saving on this device instead. Please add that again."); return; }
+      toast(e && e.code === "quota_exceeded" ? "Storage is full. Delete some old tasks to add new ones." : "That change didn't save. Check your connection and try again.");
+    });
+  }
+  function saveLocal() {
+    try { localStorage.setItem(LOCAL_KEY, JSON.stringify(Object.fromEntries(tasks))); } catch (e) {}
+  }
+  function loadLocal() {
+    try { var raw = localStorage.getItem(LOCAL_KEY); if (raw) { var o = JSON.parse(raw); tasks = new Map(Object.entries(o)); } } catch (e) {}
+  }
+  function newId() { return "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  function addTask(t) {
+    if (store.mode === "db") {
+      var ref = store.col.doc();
+      return chain(ref.id, function () { return ref.set(t); });
+    }
+    tasks.set(newId(), t); saveLocal(); render();
+  }
+  function updateTask(id, patch) {
+    var cur = tasks.get(id); if (!cur) return;
+    if (store.mode === "db") return chain(id, function () { return store.col.doc(id).update(patch); });
+    tasks.set(id, Object.assign({}, cur, patch)); saveLocal(); render();
+  }
+  function removeTask(id) {
+    if (store.mode === "db") return chain(id, function () { return store.col.doc(id).delete(); });
+    tasks.delete(id); saveLocal(); render();
+  }
+
+  function useLocal(reason) {
+    store.mode = "local"; loadLocal();
+    setStatus("warn", reason || "Saved in this browser only. Open this page while signed in to Claude to sync across devices.");
+    render();
+  }
+
+  function startDb(db, uid) {
+    store.mode = "db";
+    store.col = db.doc("data/users/" + uid + "/planner/main").collection("tasks");
+    var timer = setTimeout(function () { setStatus("warn", "Can't reach your saved tasks yet. Changes will appear once the connection is back."); }, 10000);
+    store.col.onSnapshot(function (snap) {
+      var m = new Map();
+      snap.docs.forEach(function (d) { m.set(d.id, d.data()); });
+      tasks = m;
+      if (!snap.metadata.fromCache) { clearTimeout(timer); setStatus("ok", "Synced to your Claude account. Your tasks show up on your phone and computer."); }
+      render();
+    }, function () {
+      clearTimeout(timer);
+      setStatus("warn", "Lost the connection to your saved tasks. Reload the page to reconnect.");
+    });
+  }
+
+  async function initStorage() {
+    if (!window.claude || typeof window.claude.use !== "function") { useLocal(); return; }
+    try {
+      var both = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+      var db = both[0], user = both[1];
+      var uid = user ? await user.id() : null;
+      var canWrite = user ? await user.can("data.write") : null;
+      if (db && uid && canWrite !== false) startDb(db, uid); else useLocal();
+    } catch (e) { useLocal(); }
+  }
+
+  // ---------- derived ----------
+  function tasksOn(k) {
+    var out = [];
+    tasks.forEach(function (t, id) { if (t.date === k) out.push(Object.assign({ id: id }, t)); });
+    out.sort(function (a, b) {
+      if (!!a.done !== !!b.done) return a.done ? 1 : -1;
+      if ((a.priority || 2) !== (b.priority || 2)) return (a.priority || 2) - (b.priority || 2);
+      var ta = a.time || "99", tb = b.time || "99";
+      if (ta !== tb) return ta < tb ? -1 : 1;
+      return (a.createdAt || 0) - (b.createdAt || 0);
+    });
+    return out;
+  }
+  function pct(t) { return t.done ? 100 : Math.max(0, Math.min(100, t.progress || 0)); }
+  function dayStats(list) {
+    var done = list.filter(function (t) { return t.done; }).length;
+    var avg = list.length ? Math.round(list.reduce(function (s, t) { return s + pct(t); }, 0) / list.length) : 0;
+    return { total: list.length, done: done, avg: avg };
+  }
+  function dayState(k, list) {
+    if (!list.length) return "";
+    var st = dayStats(list);
+    if (st.done === st.total) return "done";
+    if (k < todayKey()) return "overdue";
+    if (st.done > 0 || st.avg > 0) return "partial";
+    return "";
+  }
+  function overdueTasks() {
+    var t0 = todayKey(), out = [];
+    tasks.forEach(function (t, id) { if (!t.done && t.date < t0) out.push(id); });
+    return out;
+  }
+
+  // ---------- rendering ----------
+  function render() {
+    renderHeader(); renderCalendar(); renderOverdue();
+    if (query) { $("dayView").hidden = true; $("searchView").hidden = false; renderSearch(); }
+    else { $("dayView").hidden = false; $("searchView").hidden = true; renderDay(); }
+  }
+
+  function renderHeader() {
+    $("nowLabel").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+    var t = $("monthTitle"); t.textContent = MONTHS[view.m] + " ";
+    t.append(h("span", { text: String(view.y) }));
+  }
+
+  function renderCalendar() {
+    var dow = $("dow"); if (!dow.childElementCount) DOW.forEach(function (d) { dow.append(h("div", { text: d })); });
+    var grid = $("grid"); grid.textContent = "";
+    var first = new Date(view.y, view.m, 1);
+    var lead = (first.getDay() + 6) % 7; // Monday first
+    var daysIn = new Date(view.y, view.m + 1, 0).getDate();
+    var cells = Math.ceil((lead + daysIn) / 7) * 7;
+    var t0 = todayKey();
+    for (var i = 0; i < cells; i++) {
+      var d = new Date(view.y, view.m, 1 - lead + i);
+      var k = keyOf(d);
+      var list = tasksOn(k);
+      var st = dayState(k, list);
+      var stats = dayStats(list);
+      var cls = "day";
+      if (d.getMonth() !== view.m) cls += " other";
+      if (k === t0) cls += " today";
+      if (k === selected && !query) cls += " selected";
+      if (st) cls += " s-" + st;
+      var dots = h("div", { class: "dots" });
+      list.slice(0, 4).forEach(function (t) { dots.append(h("i", { class: "dot p" + (t.priority || 2) + (t.done ? " done" : "") })); });
+      if (list.length > 4) dots.append(h("span", { class: "more", text: "+" + (list.length - 4) }));
+      var label = longDate(k) + (k === t0 ? ", today" : "") + (list.length ? ", " + stats.done + " of " + stats.total + " tasks done" : ", no tasks");
+      grid.append(h("button", { type: "button", class: cls, "aria-label": label, "aria-current": k === t0 ? "date" : null, "data-k": k, onclick: onDayClick },
+        h("span", { class: "num", text: String(d.getDate()) }),
+        st === "done" ? h("span", { class: "star", "aria-hidden": "true", text: "\u2B50" }) : null,
+        list.length ? dots : null,
+        list.length ? h("span", { class: "bar" }, h("i", { style: "width:" + stats.avg + "%" })) : null
+      ));
+    }
+  }
+
+  function onDayClick(e) {
+    var k = e.currentTarget.getAttribute("data-k");
+    var d = parseKey(k);
+    selected = k; editingId = movingId = deletingId = null;
+    if (query) { query = ""; $("search").value = ""; }
+    if (d.getMonth() !== view.m || d.getFullYear() !== view.y) { view.y = d.getFullYear(); view.m = d.getMonth(); }
+    render();
+    if (window.matchMedia("(max-width: 900px)").matches) $("panel").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function renderOverdue() {
+    var ids = overdueTasks(), b = $("overdue");
+    if (!ids.length) { b.hidden = true; return; }
+    b.hidden = false; b.textContent = "";
+    b.append(
+      h("span", null, h("strong", { text: ids.length + (ids.length === 1 ? " unfinished task" : " unfinished tasks") }), " from earlier days."),
+      h("span", { class: "spacer" }),
+      h("button", { class: "btn small", type: "button", text: "Show them", onclick: function () { query = "@overdue"; $("search").value = ""; render(); } }),
+      h("button", { class: "btn small primary", type: "button", text: "Move all to today", onclick: function () {
+        var t0 = todayKey();
+        ids.forEach(function (id) { var t = tasks.get(id); updateTask(id, { date: t0, moves: (t.moves || 0) + 1 }); });
+        selected = t0; view.y = new Date().getFullYear(); view.m = new Date().getMonth();
+        toast(ids.length === 1 ? "Moved 1 task to today" : "Moved " + ids.length + " tasks to today");
+        render();
+      } })
+    );
+  }
+
+  function renderDay() {
+    var t0 = todayKey();
+    var rel = selected === t0 ? "Today" : selected === addDays(t0, 1) ? "Tomorrow" : selected === addDays(t0, -1) ? "Yesterday" : parseKey(selected).getFullYear();
+    $("dayEyebrow").textContent = String(rel);
+    $("dayTitle").textContent = longDate(selected);
+    var list = tasksOn(selected), st = dayStats(list);
+    var s = $("summary"); s.textContent = "";
+    if (list.length) {
+      s.append(
+        h("div", { class: "line" }, h("span", null, h("b", { text: st.done + " of " + st.total }), " tasks done"), h("span", null, h("b", { text: st.avg + "%" }), " overall")),
+        h("div", { class: "meter", role: "progressbar", "aria-valuenow": st.avg, "aria-valuemin": 0, "aria-valuemax": 100, "aria-label": "Day progress" }, h("i", { style: "width:" + st.avg + "%" }))
+      );
+    }
+    s.hidden = !list.length;
+
+    var form = $("addForm");
+    if (!form.childElementCount) buildForm(form, null);
+    var tl = $("taskList"); tl.textContent = "";
+    if (!list.length) tl.append(h("div", { class: "empty" }, h("span", { class: "big", "aria-hidden": "true", text: selected < t0 ? "\u{1F4A4}" : "\u{1F680}" }), selected < t0 ? "Nothing was planned for this day." : "No tasks yet. Add your first one above!"));
+    list.forEach(function (t) { tl.append(editingId === t.id ? editCard(t) : taskCard(t)); });
+  }
+
+  // Shared add / edit form
+  function buildForm(form, t) {
+    var pfx = t ? "e-" + t.id : "add";
+    form.textContent = "";
+    var title = h("input", { type: "text", id: pfx + "-title", placeholder: t ? "Task name" : "Add a task for this day…", value: t ? t.title : "", maxLength: 200, required: true });
+    var pri = h("select", { id: pfx + "-pri", "aria-label": "Priority" },
+      [1, 2, 3].map(function (p) { return h("option", { value: String(p), text: PRI[p], selected: (t ? t.priority : 2) === p }); }));
+    var cat = h("select", { id: pfx + "-cat", "aria-label": "Category" },
+      CATS.map(function (c) { return h("option", { value: c.id, text: c.icon + " " + c.name, selected: (t ? t.category : "work") === c.id }); }));
+    var time = h("input", { type: "time", id: pfx + "-time", "aria-label": "Time (optional)", value: t ? (t.time || "") : "" });
+    var notes = h("textarea", { id: pfx + "-notes", placeholder: "Notes (optional)", "aria-label": "Notes", maxLength: 2000 });
+    notes.value = t ? (t.notes || "") : "";
+    form.append(
+      h("label", { class: "sr", for: pfx + "-title", text: "Task name" }),
+      h("div", { class: "row" }, title),
+      h("div", { class: "row" }, pri, cat, time),
+      notes,
+      h("div", { class: "actions" },
+        t ? h("button", { type: "button", class: "btn ghost", text: "Cancel", onclick: function () { editingId = null; render(); } }) : null,
+        h("button", { type: "submit", class: "btn primary", text: t ? "Save changes" : "Add task" }))
+    );
+    form.onsubmit = function (e) {
+      e.preventDefault();
+      var name = title.value.trim(); if (!name) { title.focus(); return; }
+      var data = { title: name, priority: +pri.value, category: cat.value, time: time.value || "", notes: notes.value.trim() };
+      if (t) { editingId = null; updateTask(t.id, data); render(); }
+      else {
+        addTask(Object.assign(data, { date: selected, done: false, progress: 0, moves: 0, createdAt: Date.now() }));
+        title.value = ""; notes.value = ""; time.value = ""; title.focus();
+      }
+    };
+  }
+
+  function editCard(t) {
+    var f = h("form", { class: "task-form", autocomplete: "off" });
+    buildForm(f, t);
+    setTimeout(function () { var i = f.querySelector("input[type=text]"); if (i) i.focus(); }, 0);
+    return f;
+  }
+
+  function catOf(id) { return CATS.find(function (c) { return c.id === id; }) || CATS[0]; }
+
+  function taskCard(t) {
+    var p = pct(t);
+    var out = h("output", { text: p + "%" });
+    var range = h("input", { type: "range", min: 0, max: 100, step: 5, value: p, id: "prog-" + t.id, "aria-label": "Percent done for " + t.title,
+      oninput: function () { out.textContent = range.value + "%"; },
+      onchange: function () {
+        var v = +range.value;
+        if (v >= 100) { updateTask(t.id, { progress: 100, done: true, prevProgress: t.progress || 0 }); maybeCelebrate(t); }
+        else updateTask(t.id, { progress: v, done: false });
+      } });
+    var c = catOf(t.category);
+    var card = h("article", { class: "task p" + (t.priority || 2) + (t.done ? " is-done" : "") },
+      h("div", { class: "top" },
+        h("button", { type: "button", class: "check" + (t.done ? " on" : ""), "aria-pressed": t.done ? "true" : "false", "aria-label": (t.done ? "Mark not done: " : "Mark done: ") + t.title, onclick: function () {
+          if (t.done) updateTask(t.id, { done: false, progress: t.prevProgress || 0 });
+          else { updateTask(t.id, { done: true, progress: 100, prevProgress: t.progress || 0 }); maybeCelebrate(t); }
+        } }, t.done ? svgCheck() : null),
+        h("div", { style: "min-width:0;flex:1" },
+          h("div", { class: "title", text: t.title }),
+          h("div", { class: "meta" },
+            t.time ? h("span", { class: "pill", text: fmtTime(t.time) }) : null,
+            h("span", { class: "pill", style: "color:var(--c-" + c.id + ")" }, c.icon + " " + c.name),
+            h("span", { class: "pill p" + (t.priority || 2), text: PRI[t.priority || 2] }),
+            t.moves ? h("span", { title: "Times this task was moved to another day", text: "Moved " + t.moves + (t.moves === 1 ? " time" : " times") }) : null
+          )
+        )
+      ),
+      t.notes ? h("p", { class: "notes", text: t.notes }) : null,
+      h("div", { class: "prog" }, range, out)
+    );
+
+    if (movingId === t.id) {
+      var di = h("input", { type: "date", id: "move-" + t.id, value: addDays(t.date, 1), "aria-label": "New date" });
+      var go = function (k) {
+        if (!k || k === t.date) { movingId = null; render(); return; }
+        movingId = null; updateTask(t.id, { date: k, moves: (t.moves || 0) + 1 });
+        toast("Moved to " + shortDate(k)); render();
+      };
+      card.append(h("div", { class: "subrow" },
+        h("span", { text: "Move to:" }),
+        h("button", { type: "button", class: "btn small", text: "Tomorrow", onclick: function () { go(addDays(todayKey() > t.date ? todayKey() : t.date, 1)); } }),
+        h("button", { type: "button", class: "btn small", text: "Next week", onclick: function () { go(addDays(t.date, 7)); } }),
+        di,
+        h("button", { type: "button", class: "btn small primary", text: "Move", onclick: function () { go(di.value); } }),
+        h("button", { type: "button", class: "btn small ghost", text: "Cancel", onclick: function () { movingId = null; render(); } })
+      ));
+    } else if (deletingId === t.id) {
+      card.append(h("div", { class: "subrow" },
+        h("span", { style: "flex:1", text: "Delete this task for good?" }),
+        h("button", { type: "button", class: "btn small ghost", text: "Keep", onclick: function () { deletingId = null; render(); } }),
+        h("button", { type: "button", class: "btn small danger", text: "Delete", onclick: function () { deletingId = null; removeTask(t.id); toast("Task deleted"); render(); } })
+      ));
+    } else {
+      card.append(h("div", { class: "acts" },
+        h("button", { type: "button", class: "btn small ghost", text: "Move to another day", onclick: function () { movingId = t.id; deletingId = null; render(); } }),
+        h("button", { type: "button", class: "btn small ghost", text: "Edit", onclick: function () { editingId = t.id; movingId = deletingId = null; render(); } }),
+        h("button", { type: "button", class: "btn small ghost", text: "Delete", onclick: function () { deletingId = t.id; movingId = null; render(); } })
+      ));
+    }
+    return card;
+  }
+
+  function fmtTime(v) {
+    var p = v.split(":"); var d = new Date(); d.setHours(+p[0], +p[1], 0, 0);
+    return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  }
+  function svgCheck() {
+    var s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("width", "14"); s.setAttribute("height", "14"); s.setAttribute("viewBox", "0 0 24 24");
+    s.setAttribute("fill", "none"); s.setAttribute("stroke", "currentColor"); s.setAttribute("stroke-width", "3.2");
+    var p = document.createElementNS("http://www.w3.org/2000/svg", "path"); p.setAttribute("d", "M5 12.5l4.5 4.5L19 7.5");
+    s.append(p); return s;
+  }
+
+  function renderSearch() {
+    var res = $("results"); res.textContent = "";
+    var hits = [];
+    if (query === "@overdue") {
+      var t0 = todayKey();
+      tasks.forEach(function (t, id) { if (!t.done && t.date < t0) hits.push(Object.assign({ id: id }, t)); });
+      $("searchTitle").textContent = "Unfinished tasks from earlier days";
+    } else {
+      var q = query.toLowerCase();
+      tasks.forEach(function (t, id) {
+        if ((t.title || "").toLowerCase().indexOf(q) >= 0 || (t.notes || "").toLowerCase().indexOf(q) >= 0) hits.push(Object.assign({ id: id }, t));
+      });
+      $("searchTitle").textContent = hits.length ? hits.length + (hits.length === 1 ? " task matches" : " tasks match") + " “" + query + "”" : "No tasks match “" + query + "”";
+    }
+    hits.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    hits.slice(0, 80).forEach(function (t) {
+      res.append(h("button", { type: "button", class: "result", onclick: function () {
+        selected = t.date; var d = parseKey(t.date); view.y = d.getFullYear(); view.m = d.getMonth();
+        query = ""; $("search").value = ""; render();
+      } },
+        h("span", { class: "d", text: shortDate(t.date) + (t.done ? " · Done" : " · " + pct(t) + "% done") }),
+        h("span", { style: "font-weight:600;" + (t.done ? "text-decoration:line-through;color:var(--muted)" : ""), text: t.title })
+      ));
+    });
+    if (query === "@overdue") res.append(h("button", { type: "button", class: "btn", text: "Back to calendar day", onclick: function () { query = ""; render(); } }));
+  }
+
+  // ---------- celebration ----------
+  function maybeCelebrate(t) {
+    var others = tasksOn(t.date).filter(function (x) { return x.id !== t.id; });
+    if (others.every(function (x) { return x.done; })) {
+      toast(others.length ? "All done for the day! Great job \u{1F389}" : "Done! Nice work \u{1F31F}");
+      confetti();
+    } else toast("Nice! " + others.filter(function (x) { return !x.done; }).length + " to go \u{1F4AA}");
+  }
+  function confetti() {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var c = $("confetti"), ctx = c.getContext("2d");
+    c.hidden = false; c.width = innerWidth; c.height = innerHeight;
+    var css = getComputedStyle(document.documentElement);
+    var cols = ["--c-work", "--c-personal", "--c-health", "--c-errands", "--c-learning", "--sun"].map(function (v) { return css.getPropertyValue(v).trim(); });
+    var bits = [];
+    for (var i = 0; i < 140; i++) bits.push({ x: c.width / 2, y: c.height * 0.35, vx: (Math.random() - 0.5) * 14, vy: -Math.random() * 13 - 4, r: Math.random() * 6.28, vr: (Math.random() - 0.5) * 0.4, s: 6 + Math.random() * 6, col: cols[i % cols.length] });
+    var start = performance.now();
+    (function frame(tm) {
+      var el = tm - start; ctx.clearRect(0, 0, c.width, c.height);
+      bits.forEach(function (b) { b.vy += 0.35; b.x += b.vx; b.y += b.vy; b.vx *= 0.99; b.r += b.vr;
+        ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.r); ctx.fillStyle = b.col; ctx.globalAlpha = Math.max(0, 1 - el / 2200); ctx.fillRect(-b.s / 2, -b.s / 4, b.s, b.s / 2); ctx.restore(); });
+      if (el < 2200) requestAnimationFrame(frame); else { ctx.clearRect(0, 0, c.width, c.height); c.hidden = true; }
+    })(start);
+  }
+
+  // ---------- status, toast, theme ----------
+  function setStatus(kind, msg) { $("led").className = "led " + (kind || ""); $("status").textContent = msg; }
+  var toastTimer;
+  function toast(msg) { var t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 2600); }
+
+  var SUN = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+  var MOON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+  function isDark() {
+    var t = document.documentElement.getAttribute("data-theme");
+    if (t) return t === "dark";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  function paintThemeBtn() { $("themeBtn").innerHTML = isDark() ? SUN : MOON; }
+  try { var saved = localStorage.getItem("dayplanner.theme"); if (saved) document.documentElement.setAttribute("data-theme", saved); } catch (e) {}
+  $("themeBtn").addEventListener("click", function () {
+    var next = isDark() ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("dayplanner.theme", next); } catch (e) {}
+    paintThemeBtn();
+  });
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", paintThemeBtn);
+  paintThemeBtn();
+
+  // ---------- controls ----------
+  $("prevBtn").addEventListener("click", function () { view.m--; if (view.m < 0) { view.m = 11; view.y--; } render(); });
+  $("nextBtn").addEventListener("click", function () { view.m++; if (view.m > 11) { view.m = 0; view.y++; } render(); });
+  $("todayBtn").addEventListener("click", function () { var n = new Date(); view.y = n.getFullYear(); view.m = n.getMonth(); selected = todayKey(); query = ""; $("search").value = ""; editingId = movingId = deletingId = null; render(); });
+  $("search").addEventListener("input", function (e) { query = e.target.value.trim(); render(); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && (movingId || deletingId || editingId)) { movingId = deletingId = editingId = null; render(); }
+  });
+  // Re-render after midnight so "today" stays right.
+  var lastDay = todayKey();
+  setInterval(function () { if (todayKey() !== lastDay) { lastDay = todayKey(); render(); } }, 60000);
+
+  render();
+  initStorage();
+})();
+</script>
+
+</body>
+</html>
